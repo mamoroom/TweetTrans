@@ -10,7 +10,6 @@ import (
 
 type TwitterApiManager struct {
 	TwitterApi anaconda.TwitterApi
-	ApiStream  *anaconda.Stream
 }
 
 func New(client_key string, client_secret string, access_token string, access_token_secret string) TwitterApiManager {
@@ -18,11 +17,11 @@ func New(client_key string, client_secret string, access_token string, access_to
 	anaconda.SetConsumerSecret(client_secret)
 	m := new(TwitterApiManager)
 	m.TwitterApi = *anaconda.NewTwitterApi(access_token, access_token_secret)
-	SetLogger(anaconda.BasicLogger)
+	m.TwitterApi.SetLogger(anaconda.BasicLogger)
 	return *m
 }
 
-func (m *TwitterApiManager) StartPublicStream(req_param interface{}) chan interface{} {
+func (m *TwitterApiManager) GetPublicStream(req_param interface{}) *anaconda.Stream {
 	v_url := url.Values{}
 	v := reflect.ValueOf(req_param)
 	rt := v.Type()
@@ -31,10 +30,9 @@ func (m *TwitterApiManager) StartPublicStream(req_param interface{}) chan interf
 		name := rt.Field(i).Name
 		v_url.Set(strings.ToLower(name), r.FieldByName(name).String())
 	}
-	m.ApiStream = m.TwitterApi.PublicStreamFilter(v_url)
-	return m.ApiStream.C
+	return m.TwitterApi.PublicStreamFilter(v_url)
 }
 
 func (m *TwitterApiManager) StopPublicStream() {
-	m.ApiStream.Stop()
+	//m.ApiStream.Stop()
 }

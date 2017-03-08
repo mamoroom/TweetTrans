@@ -5,13 +5,18 @@ import (
 	"./lib"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/net/context"
+	"html"
 	"io/ioutil"
 	"os"
 	"os/signal"
 	"regexp"
 	"syscall"
 	//_ "github.com/guregu/dynamo"
+	"cloud.google.com/go/translate"
 	"github.com/ChimeraCoder/anaconda"
+	"golang.org/x/text/language"
+	"google.golang.org/api/option"
 )
 
 type Conf struct {
@@ -29,15 +34,18 @@ type TwitterApiConf struct {
 type TwitterApiReqParam struct {
 	Track string `json:"track"`
 }
+
 type GoogleApiConf struct {
 	ApiKey string `json:"api_key"`
 }
+
+var TARGET_LANGUAGES = []string{"ja", "en", "es", "fr", "it", "de", "ko"}
 
 func main() {
 	// get conf
 	var config Conf
 	{
-		file, err := ioutil.ReadFile("config.json")
+		file, err := ioutil.ReadFile("../../config.json")
 		if err != nil {
 			fmt.Fprint(os.Stderr, "Can't load json file")
 			os.Exit(1)
@@ -49,21 +57,37 @@ func main() {
 		}
 	}
 
+	// init google translate api <- あとで引っ越し //
+	ctx := context.Background()
+	g_t_api, err := translate.NewClient(ctx, option.WithAPIKey(config.GoogleApiConf.ApiKey))
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Fmt error of json")
+		g_t_api.Close()
+		os.Exit(1)
+	}
+	/////////////////////////////
+
 	fmt.Println("Hello guys!")
 	api_manager := twitter_api_manager.New(config.TwitterApiConf.ConsumerKey, config.TwitterApiConf.ConsumerSecret, config.TwitterApiConf.AccessToken, config.TwitterApiConf.AccessTokenSecret)
+	twitter_stream := api_manager.GetPublicStream(config.TwitterApiConf.TwitterApiReqParam)
 	go func() {
 		for {
-			stream := <-api_manager.StartPublicStream(config.TwitterApiConf.TwitterApiReqParam)
+			stream := <-twitter_stream.C
 			switch tweet := stream.(type) {
 			case anaconda.Tweet:
 				fmt.Println("--------")
 				rep := regexp.MustCompile(config.TwitterApiConf.TwitterApiReqParam.Track)
 				_text := rep.ReplaceAllString(tweet.Text, "")
 				fmt.Printf("%v:%s(%s): %s %s\n", tweet.Id, tweet.User.ScreenName, tweet.User.ProfileImageURL, _text, tweet.CreatedAt)
+				for _, target_lang := range TARGET_LANGUAGES {
+					fmt.Println("->" + target_lang)
+					trans_text := get_translated_text(_text, target_lang, g_t_api, ctx)
+					fmt.Println(trans_text)
+				}
 			case anaconda.StatusDeletionNotice:
 				//pass
 			default:
-				fmt.Printf("unknown type(%T) : %v \n", tweet, tweet)
+				//fmt.Printf("unknown type(%T) : %v \n", tweet, tweet)
 			}
 		}
 	}()
@@ -74,6 +98,7 @@ func main() {
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
 	exit_chan := make(chan int)
+	is_can_exit := false
 	go func() {
 		for {
 			s := <-signal_chan
@@ -85,9 +110,14 @@ func main() {
 
 			// kill -SIGINT XXXX or Ctrl+c
 			case syscall.SIGINT:
-				fmt.Println("Warikomi")
-				api_manager.StopPublicStream()
-				//exit_chan <- 0
+				fmt.Println("Ctl+c")
+				if !is_can_exit {
+					twitter_stream.Stop()
+					is_can_exit = true
+					fmt.Println("Now you can exit")
+				} else {
+					exit_chan <- 0
+				}
 
 			// kill -SIGTERM XXXX
 			case syscall.SIGTERM:
@@ -107,6 +137,19 @@ func main() {
 	}()
 
 	code := <-exit_chan
-	fmt.Println("Stop:", code)
-	//os.Exit(code)
+	fmt.Println("Stop:")
+	os.Exit(code)
+}
+
+func get_translated_text(text string, target_lang string, g_t_api *translate.Client, ctx context.Context) string {
+	lang, err := language.Parse(target_lang)
+	if err != nil {
+		return "NaN"
+	}
+	resp, err := g_t_api.Translate(ctx, []string{text}, lang, nil)
+	if err != nil {
+		return "NaN"
+	}
+
+	return html.UnescapeString(resp[0].Text)
 }
