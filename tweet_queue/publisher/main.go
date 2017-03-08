@@ -2,7 +2,8 @@ package main
 
 import (
 	//"github.com/mamoroom/tweet_translater/tweet_queue/publisher/lib/twitter_api_manager"
-	"./lib"
+	"./lib/dynamo_db_manager"
+	"./lib/tweet_api_manager"
 	"encoding/json"
 	"fmt"
 	"golang.org/x/net/context"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
+	"strconv"
 	"syscall"
 	//_ "github.com/guregu/dynamo"
 	"cloud.google.com/go/translate"
@@ -79,10 +81,19 @@ func main() {
 				rep := regexp.MustCompile(config.TwitterApiConf.TwitterApiReqParam.Track)
 				_text := rep.ReplaceAllString(tweet.Text, "")
 				fmt.Printf("%v:%s(%s): %s %s\n", tweet.Id, tweet.User.ScreenName, tweet.User.ProfileImageURL, _text, tweet.CreatedAt)
+
+				time_tweeted, err := tweet.CreatedAtTime()
+				if err != nil {
+					fmt.Println("%v", err)
+					return
+				}
 				for _, target_lang := range TARGET_LANGUAGES {
-					fmt.Println("->" + target_lang)
 					trans_text := get_translated_text(_text, target_lang, g_t_api, ctx)
-					fmt.Println(trans_text)
+					//fmt.Println(trans_text)
+
+					ddm := dynamo_db_manager.New()
+					boolean := ddm.PutTrans(target_lang, time_tweeted.Unix(), tweet.Id, tweet.User.ScreenName, _text, trans_text, tweet.User.ProfileImageURL)
+					fmt.Println("->" + target_lang + ":" + strconv.FormatBool(boolean))
 				}
 			case anaconda.StatusDeletionNotice:
 				//pass
