@@ -1,6 +1,6 @@
 .national-flag-img {
-	width: 42px;
-	height: 28px;
+	width: 3em;
+	height: 2em;
 }
 .content {
 	display: table;
@@ -21,5 +21,5 @@
 	color: #8899a6;
 }
 .trans-tweet {
-	font-size: 1.2em
+	font-size: 1.1em
 }
