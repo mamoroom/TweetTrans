@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="utf-8">
+  <!-- jQueryとjQueryUIをCDNで読み込む。（ダウンロードしなくていい。） -->
+  <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+  <script src="//code.jquery.com/ui/1.11.0/jquery-ui.js"></script>  
+  <!-- cssも外部から読み込んでる。 -->
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+
+  <body>
+    <div id="tab_world">
+    <ul>
+      <li><a href="/api/init?lang=ja"><img class="national-flag-img" src="assets/img/country/ja.gif"></img></a></li>
+      <li><a href="/api/init?lang=ko"><img class="national-flag-img" src="assets/img/country/ko.gif"></img></a></li>
+      <li><a href="/api/init?lang=en&cnt=us"><img class="national-flag-img" src="assets/img/country/us.gif"></img></a></li>
+      <li><a href="/api/init?lang=en&cnt=au"><img class="national-flag-img" src="assets/img/country/au.gif"></img></a></li>
+      <li><a href="/api/init?lang=en&cnt=br"><img class="national-flag-img" src="assets/img/country/br.gif"></img></a></li>
+      <li><a href="/api/init?lang=en&cnt=ca"><img class="national-flag-img" src="assets/img/country/ca.gif"></img></a></li>
+      <li><a href="/api/init?lang=nl"><img class="national-flag-img" src="assets/img/country/du.gif"></img></a></li>
+      <li><a href="/api/init?lang=es"><img class="national-flag-img" src="assets/img/country/es.gif"></img></a></li>
+      <li><a href="/api/init?lang=fr"><img class="national-flag-img" src="assets/img/country/fr.gif"></img></a></li>
+      <li><a href="/api/init?lang=de"><img class="national-flag-img" src="assets/img/country/ge.gif"></img></a></li>
+      <li><a href="/api/init?lang=it"><img class="national-flag-img" src="assets/img/country/it.gif"></img></a></li>
+    </ul>
+
+    <div class="tweet-area">
+    </div>
+
+  </div>
+
+	<script type="text/javascript">
+		var on_data_recieving = function(data) {
+			var d = $.Deferred();
+			if (data != null) {
+				lrk = data[0]["Timestamp_TweetID"];
+				data.forEach(function(result) {
+	       			$(".tweet-area").prepend("<ul>");
+	       			$(".tweet-area").prepend("<li>"+result.TransedTweet+"</li>");
+	       			$(".tweet-area").prepend("</ul>");
+				});
+
+			} else {
+				console.log("no new data")
+			}
+			console.log(lrk);
+			d.resolve()
+		}
+
+		function polling(_lang, _lrk) {
+			var _url = api_url + "?lang=" + _lang + "&lrk=" + _lrk;
+			console.log(_url);
+			var d = $.Deferred()
+			$.get(_url)
+			.then(on_data_recieving)
+			.then(wait_time(5000))
+			.done(function() {
+				cbk();
+			})
+			d.resolve();
+			return d.promise()
+		};
+
+		var wait_time =  function(time) {
+			return (function(){
+				var d = $.Deferred()
+				setTimeout(function() {  
+					console.log("resolve#wait_time("+time+") ");
+					d.resolve(); 
+				}, time);
+				return d.promise()
+			})
+		};
+
+		var api_url = "/api/get";
+		var lang;
+		var lrk;
+		var cbk;
+		to_stop_polling = false;
+		is_stop_polling = true;
+
+	    $(function() {
+	        $( "#tab_world" ).tabs({
+	        	beforeLoad: function(e, ui) {
+					to_stop_polling = true;
+					$(".tweet-area").empty();
+	        		ui.jqXHR.success(function(data){
+        				console.log("wait for stopping polling.");		
+	        			lang = data.RequestLang;
+	        			lrk = data.LatestRageKey;
+	        			data.Values.forEach(function(result) {
+		        			$(".tweet-area").append("<ul>");
+		        			$(".tweet-area").append("<li>"+result.TransedTweet+"</li>");
+		        			$(".tweet-area").append("</ul>");
+	        			});
+	        			is_stop_polling = false;
+						to_stop_polling = false;
+						cbk = function() {
+							polling(lang, lrk);	
+						}
+	        		})
+	        	}
+	        });
+	        polling(lang, lrk, cbk);
+		});
+	</script>
+  </body>
+</html>

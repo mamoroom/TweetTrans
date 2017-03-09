@@ -41,7 +41,7 @@ type GoogleApiConf struct {
 	ApiKey string `json:"api_key"`
 }
 
-var TARGET_LANGUAGES = []string{"ja", "en", "es", "fr", "it", "de", "ko"}
+var TARGET_LANGUAGES = []string{"ja", "en", "es", "fr", "it", "de", "ko", "nl"}
 
 func main() {
 	// get conf
@@ -89,11 +89,10 @@ func main() {
 				}
 				for _, target_lang := range TARGET_LANGUAGES {
 					trans_text := get_translated_text(_text, target_lang, g_t_api, ctx)
-					//fmt.Println(trans_text)
 
 					ddm := dynamo_db_manager.New()
 					boolean := ddm.PutTrans(target_lang, time_tweeted.Unix(), tweet.Id, tweet.User.ScreenName, _text, trans_text, tweet.User.ProfileImageURL)
-					fmt.Println("->" + target_lang + ":" + strconv.FormatBool(boolean))
+					fmt.Println("->[" + target_lang + ":" + strconv.FormatBool(boolean) + "]" + trans_text)
 				}
 			case anaconda.StatusDeletionNotice:
 				//pass
