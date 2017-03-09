@@ -36,15 +36,13 @@
 			if (data != null) {
 				lrk = data[0]["Timestamp_TweetID"];
 				data.forEach(function(result) {
-	       			/*$(".tweet-area").prepend("<ul>");
-	       			$(".tweet-area").prepend("<li>"+result.TransedTweet+"</li>");
-	       			$(".tweet-area").prepend("</ul>");*/
-	        				var tw_div = '<div class="tweet js-stream-tweet js-actionable-tweet js-profile-popup-actionable original-tweet js-original-tweet my-tweet"><div class="content"><img class="profile-img"src="' + result.ProfileImageURL + '"><div class="text-area"><div class="screen-name">@'+result.ScreenName+'</div><div class="trans-tweet">'+result.TransedTweet+'</div></div></div></div>';
-		        			var $tw_div = $(tw_div);
-		        			$tw_div.css('display', 'none');
-		        			$tw_div.prependTo($(".tweet-area"));
-		        			$tw_div.animate({height: 'show', opacity: 'show'}, 'slow');				
-		        });
+					var diff_time = displayTime(result.Timestamp_TweetID.replace(/_.*$/g,""));
+					var tw_div = '<div class="tweet js-stream-tweet js-actionable-tweet js-profile-popup-actionable original-tweet js-original-tweet my-tweet"><div class="content"><img class="profile-img"src="' + result.ProfileImageURL + '"><div class="text-area"><div class="screen-name">@'+result.ScreenName+'・'+diff_time+'</div><div class="trans-tweet">'+result.TransedTweet+'</div></div></div></div>';
+					var $tw_div = $(tw_div);
+					$tw_div.css('display', 'none');
+					$tw_div.prependTo($(".tweet-area"));
+					$tw_div.animate({height: 'show', opacity: 'show'}, 'slow');
+				});
 
 			} else {
 				console.log("no new data")
@@ -78,6 +76,27 @@
 			})
 		};
 
+		function displayTime(unixTime) {
+			var date = new Date(unixTime*1000)
+			var diff = new Date().getTime() - date.getTime()
+			var d = new Date(diff);
+			console.log(date);
+
+			if (d.getUTCFullYear() - 1970) {
+				return d.getUTCFullYear() - 1970 + 'y'
+			} else if (d.getUTCMonth()) {
+				return d.getUTCMonth() + 'm'
+			} else if (d.getUTCDate() - 1) {
+				return d.getUTCDate() - 1 + 'd'
+			} else if (d.getUTCHours()) {
+				return d.getUTCHours() + 'h'
+			} else if (d.getUTCMinutes()) {
+				return d.getUTCMinutes() + 'm'
+			} else {
+				return d.getUTCSeconds() + 's'
+			}
+		}
+
 		var api_url = "/api/get";
 		var lang;
 		var lrk;
@@ -91,11 +110,12 @@
 					to_stop_polling = true;
 					$(".tweet-area").empty();
 	        		ui.jqXHR.success(function(data){
-        				console.log("wait for stopping polling.");		
+        				console.log("wait for stopping polling.");
 	        			lang = data.RequestLang;
 	        			lrk = data.LatestRageKey;
 	        			data.Values.forEach(function(result) {
-	        				var tw_div = '<div class="tweet js-stream-tweet js-actionable-tweet js-profile-popup-actionable original-tweet js-original-tweet my-tweet"><div class="content"><img class="profile-img"src="' + result.ProfileImageURL + '"><div class="text-area"><div class="screen-name">@'+result.ScreenName+'</div><div class="trans-tweet">'+result.TransedTweet+'</div></div></div></div>';
+							var diff_time = displayTime(result.Timestamp_TweetID.replace(/_.*$/g,""));
+							var tw_div = '<div class="tweet js-stream-tweet js-actionable-tweet js-profile-popup-actionable original-tweet js-original-tweet my-tweet"><div class="content"><img class="profile-img"src="' + result.ProfileImageURL + '"><div class="text-area"><div class="screen-name">@'+result.ScreenName+'・'+diff_time+'</div><div class="trans-tweet">'+result.TransedTweet+'</div></div></div></div>';
 		        			var $tw_div = $(tw_div);
 		        			$tw_div.css('display', 'none');
 		        			$tw_div.appendTo($(".tweet-area"));
