@@ -6,6 +6,7 @@
   <script src="//code.jquery.com/ui/1.11.0/jquery-ui.js"></script>  
   <!-- cssも外部から読み込んでる。 -->
   <link rel="stylesheet" href="//code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css">
+  <link rel="stylesheet" href="https://abs.twimg.com/a/1488879471/css/t1/twitter_core.bundle.css">
   <link rel="stylesheet" href="assets/css/style.css">
 
   <body>
@@ -35,10 +36,15 @@
 			if (data != null) {
 				lrk = data[0]["Timestamp_TweetID"];
 				data.forEach(function(result) {
-	       			$(".tweet-area").prepend("<ul>");
+	       			/*$(".tweet-area").prepend("<ul>");
 	       			$(".tweet-area").prepend("<li>"+result.TransedTweet+"</li>");
-	       			$(".tweet-area").prepend("</ul>");
-				});
+	       			$(".tweet-area").prepend("</ul>");*/
+	        				var tw_div = '<div class="tweet js-stream-tweet js-actionable-tweet js-profile-popup-actionable original-tweet js-original-tweet my-tweet"><div class="content"><img class="profile-img"src="' + result.ProfileImageURL + '"><div class="text-area"><div class="screen-name">@'+result.ScreenName+'</div><div class="trans-tweet">'+result.TransedTweet+'</div></div></div></div>';
+		        			var $tw_div = $(tw_div);
+		        			$tw_div.css('display', 'none');
+		        			$tw_div.prependTo($(".tweet-area"));
+		        			$tw_div.animate({height: 'show', opacity: 'show'}, 'slow');				
+		        });
 
 			} else {
 				console.log("no new data")
@@ -89,9 +95,11 @@
 	        			lang = data.RequestLang;
 	        			lrk = data.LatestRageKey;
 	        			data.Values.forEach(function(result) {
-		        			$(".tweet-area").append("<ul>");
-		        			$(".tweet-area").append("<li>"+result.TransedTweet+"</li>");
-		        			$(".tweet-area").append("</ul>");
+	        				var tw_div = '<div class="tweet js-stream-tweet js-actionable-tweet js-profile-popup-actionable original-tweet js-original-tweet my-tweet"><div class="content"><img class="profile-img"src="' + result.ProfileImageURL + '"><div class="text-area"><div class="screen-name">@'+result.ScreenName+'</div><div class="trans-tweet">'+result.TransedTweet+'</div></div></div></div>';
+		        			var $tw_div = $(tw_div);
+		        			$tw_div.css('display', 'none');
+		        			$tw_div.appendTo($(".tweet-area"));
+		        			$tw_div.animate({height: 'show', opacity: 'show'}, 'normal');
 	        			});
 	        			is_stop_polling = false;
 						to_stop_polling = false;
