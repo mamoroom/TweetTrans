@@ -82,6 +82,21 @@ func main() {
 				_text := rep.ReplaceAllString(tweet.Text, "")
 				fmt.Printf("%v:%s(%s): %s %s\n", tweet.Id, tweet.User.ScreenName, tweet.User.ProfileImageURL, _text, tweet.CreatedAt)
 
+				// test
+				for _, media := range tweet.Entities.Media {
+					fmt.Printf("Media: %s\n", media.Media_url_https)
+				}
+
+				for _, ex_media := range tweet.ExtendedEntities.Media {
+					fmt.Printf("ExMedia: %s\n", ex_media.Media_url_https)
+				}
+
+				for _, url := range tweet.Entities.Urls {
+					fmt.Printf("URL: %s\n", url.Url)
+				}
+
+				//
+
 				time_tweeted, err := tweet.CreatedAtTime()
 				if err != nil {
 					fmt.Println("%v", err)
